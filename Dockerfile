@@ -1,0 +1,23 @@
+# Reference URL:
+# https://github.com/XTLS/Xray-core
+# https://github.com/v2fly/v2ray-core
+# https://github.com/Loyalsoldier/v2ray-rules-dat
+FROM alpine:latest AS builder
+RUN wget -c https://github.com/XTLS/Xray-core/releases/download/v26.3.27/Xray-linux-64.zip \
+  && unzip -d xray Xray-linux-64.zip \
+  && rm -f LICENSE README.md
+
+
+FROM alpine:3.24
+COPY --from=builder /xray/* /
+RUN set -ex \
+	&& apk add --no-cache bash tzdata ca-certificates openssl \
+	&& mkdir -p /var/log/xray /usr/share/xray \
+  && cp /xray /usr/bin/ \
+  && mv /geoip.dat /geosite.dat /usr/share/xray/
+
+VOLUME /etc/xray
+VOLUME /var/log/xray
+
+ENV TZ=Asia/Tehran
+CMD [ "/usr/bin/xray", "-config", "/etc/xray/config.json" ]
