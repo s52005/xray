@@ -3,7 +3,8 @@
 # https://github.com/v2fly/v2ray-core
 # https://github.com/Loyalsoldier/v2ray-rules-dat
 FROM alpine:latest AS builder
-RUN wget -c https://github.com/XTLS/Xray-core/releases/download/v26.3.27/Xray-linux-64.zip \
+ARG XRAY_VERSION=$XRAY_VERSION
+RUN wget -c https://github.com/XTLS/Xray-core/releases/download/$XRAY_VERSION/Xray-linux-64.zip \
   && unzip -d xray Xray-linux-64.zip \
   && rm -f LICENSE README.md
 

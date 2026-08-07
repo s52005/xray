@@ -21,6 +21,8 @@ env:
   REGISTRY: ghcr.io
   # github.repository as <account>/<repo>
   IMAGE_NAME: ${{ github.repository }}
+  # Xray latest version
+  XRAY_VERSION: v26.3.27
 
 
 jobs:
@@ -87,10 +89,12 @@ jobs:
           push: ${{ github.event_name != 'pull_request' }}
           tags: |
             ${{ steps.meta.outputs.tags }}
-            docker.io/${{ github.repository }}
+            docker.io/${{ github.repository }}:${{ env.XRAY_VERSION}}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          build-args: |
+            XRAY_VERSION=${{ env.XRAY_VERSION }}
 
       # Sign the resulting Docker image digest except on PRs.
       # This will only write to the public Rekor transparency log when the Docker
