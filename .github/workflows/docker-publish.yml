@@ -87,7 +87,7 @@ jobs:
           push: ${{ github.event_name != 'pull_request' }}
           tags: |
             ${{ steps.meta.outputs.tags }}
-            docker.io/${{ github.actor }}/${{ env.REGISTRY }}
+            docker.io/${{ github.repository }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
