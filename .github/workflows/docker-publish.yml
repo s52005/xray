@@ -7,8 +7,8 @@ name: Build Docker image
 
 on:
 
-  #schedule:
-    #- cron: '25 15 * * *'
+  schedule:
+    - cron: '25 15 * * *'
   push:
     branches: [ "main" ]
     # Publish semver tags as releases.
@@ -38,7 +38,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       # Install the cosign tool except on PR
       # https://github.com/sigstore/cosign-installer
@@ -73,12 +73,26 @@ jobs:
 
       # Extract metadata (tags, labels) for Docker
       # https://github.com/docker/metadata-action
-      - name: Extract Docker metadata
-        id: meta
-        uses: docker/metadata-action@96383f45573cb7f253c731d3b3ab81c87ef81934 # v5.0.0
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+      #- name: Extract Docker metadata
+        #id: meta
+        #uses: docker/metadata-action@96383f45573cb7f253c731d3b3ab81c87ef81934 # v5.0.0
+        #with:
+          #images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
 
+      - name: Get the latest Xray version
+        env:
+          OWNER: XTLS
+          REPO: Xray-core
+        run: |
+          LATEST_RELEASE="$(
+            curl -fsSL \
+              -H "Accept: application/vnd.github+json" \
+              "https://api.github.com/repos/$OWNER/$REPO/releases/latest" |
+              jq -r '.tag_name'
+          )"
+          echo "Latest version is $LATEST_RELEASE"
+          echo "LATEST_RELEASE=$LATEST_RELEASE" >> "$GITHUB_ENV"
+        
       # Build and push Docker image with Buildx (don't push on PR)
       # https://github.com/docker/build-push-action
       - name: Build and push Docker image
@@ -88,9 +102,9 @@ jobs:
           context: .
           push: ${{ github.event_name != 'pull_request' }}
           tags: |
-            ${{ steps.meta.outputs.tags }}
-            docker.io/${{ github.repository }}:${{ env.XRAY_VERSION}}
-          labels: ${{ steps.meta.outputs.labels }}
+            ghcr.io/${{ github.repository }}:${{ env.LATEST_RELEASE }}
+            docker.io/${{ github.repository }}:${{ env.LATEST_RELEASE }}
+          #labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           build-args: |
@@ -101,12 +115,12 @@ jobs:
       # repository is public to avoid leaking data.  If you would like to publish
       # transparency data even for private images, pass --force to cosign below.
       # https://github.com/sigstore/cosign
-      - name: Sign the published Docker image
-        if: ${{ github.event_name != 'pull_request' }}
-        env:
+      #- name: Sign the published Docker image
+        #if: ${{ github.event_name != 'pull_request' }}
+        #env:
           # https://docs.github.com/en/actions/security-guides/security-hardening-for-github-actions#using-an-intermediate-environment-variable
-          TAGS: ${{ steps.meta.outputs.tags }}
-          DIGEST: ${{ steps.build-and-push.outputs.digest }}
+          #TAGS: ${{ steps.meta.outputs.tags }}
+          #DIGEST: ${{ steps.build-and-push.outputs.digest }}
         # This step uses the identity token to provision an ephemeral certificate
         # against the sigstore community Fulcio instance.
-        run: echo "${TAGS}" | xargs -I {} cosign sign --yes {}@${DIGEST}
+        #run: echo "${TAGS}" | xargs -I {} cosign sign --yes {}@${DIGEST}
