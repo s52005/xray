@@ -10,11 +10,14 @@ on:
   schedule:
     - cron: '25 15 * * *'
   push:
-    branches: [ "main" ]
+    paths-ignore:
+      - "README.md"
+    #branches: [ "main" ]
     # Publish semver tags as releases.
-    tags: [ 'v*.*.*' ]
+    #tags: [ 'v*.*.*' ]
   #pull_request:
     #branches: [ "main" ]
+  workflow_dispatch:
 
 env:
   # Use docker.io for Docker Hub if empty
