@@ -1,5 +1,7 @@
 # Xray Docker Image
 Dockerized Xray image, automatically built and published to Docker Hub and GitHub Container Registry using GitHub Actions.
+- `docker pull ghcr.io/s52005/xray`
+- `docker pull s52005/xray`
 <br><br/>
 ## Using the image
 ```shell
