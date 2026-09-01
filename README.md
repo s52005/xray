@@ -13,9 +13,7 @@ docker run -d \
 <br><br/>
 ✅ Use a specific version tag from the repository’s Tags menu, such as v26.3.27, instead of the latest tag. Pinning a version helps prevent unexpected changes and compatibility issues.
 <br><br/>
-Checkout the Dockerfile and GitHub Actions workflow on GitHub:
 
-[GitHub Repository](https://github.com/s52005/xray)
 
 **Latest version:** ![](https://img.shields.io/badge/V-26.3.27-blue)
 
