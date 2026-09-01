@@ -33,6 +33,7 @@ jobs:
 
     runs-on: ubuntu-latest
     outputs:
+      newer_version: ${{ steps.get-latest-version.outputs.newer_version }}
       latest_release: ${{ steps.get-latest-version.outputs.latest_release }}
     permissions:
       contents: read
@@ -44,45 +45,6 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
-
-      # Install the cosign tool except on PR
-      # https://github.com/sigstore/cosign-installer
-      - name: Install cosign
-        if: github.event_name != 'pull_request'
-        uses: sigstore/cosign-installer@59acb6260d9c0ba8f4a2f9d9b48431a222b68e20 #v3.5.0
-        with:
-          cosign-release: 'v2.2.4'
-
-      # Set up BuildKit Docker container builder to be able to build
-      # multi-platform images and export cache
-      # https://github.com/docker/setup-buildx-action
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@f95db51fddba0c2d1ec667646a06c2ce06100226 # v3.0.0
-
-      # Login against a Docker registry except on PR
-      # https://github.com/docker/login-action
-      - name: Log into GHCR ${{ env.REGISTRY }}
-        if: github.event_name != 'pull_request'
-        uses: docker/login-action@343f7c4344506bcbf9b4de18042ae17996df046d # v3.0.0
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Log into Docker Hub ${{ env.REGISTRY }}
-        if: github.event_name != 'pull_request'
-        uses: docker/login-action@343f7c4344506bcbf9b4de18042ae17996df046d # v3.0.0
-        with:
-          username: ${{ github.actor }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-      # Extract metadata (tags, labels) for Docker
-      # https://github.com/docker/metadata-action
-      #- name: Extract Docker metadata
-        #id: meta
-        #uses: docker/metadata-action@96383f45573cb7f253c731d3b3ab81c87ef81934 # v5.0.0
-        #with:
-          #images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
 
       - name: Get the latest Xray version
         id: get-latest-version
@@ -97,13 +59,69 @@ jobs:
               jq -r '.tag_name'
           )"
           [[ -n "$LATEST_RELEASE" ]] || (echo "LATEST_RELEASE variable is empty" && exit 1)
+          NEW_VERSION="$(echo $LATEST_RELEASE | cut -c 2-)"
+          OLD_VERSION="$(grep "Latest version:" ./README.md | awk -F '/' '{print $NF}' | awk -F '-' '{print $2}')"
+          if [[ "$NEW_VERSION" == "$OLD_VERSION" ]]; then
+            echo "No updates needed"
+            echo "Current version: V$OLD_VERSION"
+            NEWER_VERSION=false
+          else
+            echo "Newer version available: $NEW_VERSION"
+            NEWER_VERSION=true
+          fi
           echo "Latest version is $LATEST_RELEASE"
           echo "LATEST_RELEASE=$LATEST_RELEASE" >> "$GITHUB_ENV"
           echo "latest_release=$LATEST_RELEASE" >> "$GITHUB_OUTPUT"
+          echo "NEWER_VERSION=$NEWER_VERSION" >> "$GITHUB_ENV"
+          echo "newer_version=$NEWER_VERSION" >> "$GITHUB_OUTPUT"
+
+      # Install the cosign tool except on PR
+      # https://github.com/sigstore/cosign-installer
+      #- name: Install cosign
+        #if: github.event_name != 'pull_request'
+        #uses: sigstore/cosign-installer@59acb6260d9c0ba8f4a2f9d9b48431a222b68e20 #v3.5.0
+        #with:
+          #cosign-release: 'v2.2.4'
+
+      # Set up BuildKit Docker container builder to be able to build
+      # multi-platform images and export cache
+      # https://github.com/docker/setup-buildx-action
+      - name: Set up Docker Buildx
+        if: ${{ env.NEWER_VERSION }}
+        uses: docker/setup-buildx-action@f95db51fddba0c2d1ec667646a06c2ce06100226 # v3.0.0
+
+      # Login against a Docker registry except on PR
+      # https://github.com/docker/login-action
+      - name: Log into GHCR ${{ env.REGISTRY }}
+        #if: github.event_name != 'pull_request
+        if: ${{ env.NEWER_VERSION }}
+        uses: docker/login-action@343f7c4344506bcbf9b4de18042ae17996df046d # v3.0.0
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Log into Docker Hub ${{ env.REGISTRY }}
+        #if: github.event_name != 'pull_request'
+        if: ${{ env.NEWER_VERSION }}
+        uses: docker/login-action@343f7c4344506bcbf9b4de18042ae17996df046d # v3.0.0
+        with:
+          username: ${{ github.actor }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      # Extract metadata (tags, labels) for Docker
+      # https://github.com/docker/metadata-action
+      #- name: Extract Docker metadata
+        #id: meta
+        #uses: docker/metadata-action@96383f45573cb7f253c731d3b3ab81c87ef81934 # v5.0.0
+        #with:
+          #images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+
         
       # Build and push Docker image with Buildx (don't push on PR)
       # https://github.com/docker/build-push-action
       - name: Build and push Docker image
+        if: ${{ env.NEWER_VERSION }}
         id: build-and-push
         uses: docker/build-push-action@0565240e2d4ab88bba5387d719585280857ece09 # v5.0.0
         with:
@@ -137,6 +155,7 @@ jobs:
 
   update-readme:
     needs: build
+    if: needs.build.outputs.newer_version == true
     runs-on: ubuntu-latest
     permissions:
       contents: write
