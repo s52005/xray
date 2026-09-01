@@ -149,7 +149,7 @@ jobs:
           NEW_VERSION="$(echo $LATEST_RELEASE | cut -c 2-)"
           OLD_VERSION="$(grep "Latest version:" ./README.md | awk -F '/' '{print $NF}' | awk -F '-' '{print $2}')"
           if [[ "$NEW_VERSION" == "$OLD_VERSION" ]]; then
-            echo "Maintainer version ($NEW_VERSION) is same as out current version ($OLD_VERSION)"
+            echo "Maintainer version ($NEW_VERSION) is same as our current version ($OLD_VERSION)"
             echo "No changes needed."
           else
             sed -i "s|V-$OLD_VERSION-blue|V-$NEW_VERSION-blue|" README.md
