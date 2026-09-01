@@ -8,7 +8,7 @@ name: Build Docker image
 on:
 
   schedule:
-    - cron: '25 15 * * *'
+    - cron: '0 0 * * *'
   #push:
     #paths-ignore:
       #- "README.md"
