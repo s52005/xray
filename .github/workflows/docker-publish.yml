@@ -32,6 +32,8 @@ jobs:
   build:
 
     runs-on: ubuntu-latest
+    outputs:
+      latest_release: ${{ steps.get-latest-version.outputs.latest_release }}
     permissions:
       contents: read
       packages: write
@@ -83,6 +85,7 @@ jobs:
           #images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
 
       - name: Get the latest Xray version
+        id: get-latest-version
         env:
           OWNER: XTLS
           REPO: Xray-core
@@ -96,6 +99,7 @@ jobs:
           [[ -n "$LATEST_RELEASE" ]] || (echo "LATEST_RELEASE variable is empty" && exit 1)
           echo "Latest version is $LATEST_RELEASE"
           echo "LATEST_RELEASE=$LATEST_RELEASE" >> "$GITHUB_ENV"
+          echo "latest_release=$LATEST_RELEASE" >> "$GITHUB_OUTPUT"
         
       # Build and push Docker image with Buildx (don't push on PR)
       # https://github.com/docker/build-push-action
@@ -137,5 +141,37 @@ jobs:
     permissions:
       contents: write
     steps:
-      - run: 
+      - name: Checkout repository
+        uses: actions/checkout@v6
+      - name: Make update in README file
+        run: |
+          LATEST_RELEASE=${{ needs.build.outputs.latest_release }}"
+          NEW_VERSION="$(echo $LATEST_RELEASE | cut -c 2-)"
+          OLD_VERSION="$(grep "Latest version:" ./README.md | awk -F '/' '{print $NF}' | awk -F '-' '{print $2}')"
+          if [[ "$NEW_VERSION" == "$OLD_VERSION" ]]; then
+            echo "Maintainer version ($NEW_VERSION) is same as out current version ($OLD_VERSION)"
+            echo "No changes needed."
+          else
+            sed -i "s|V-$OLD_VERSION-blue|V-$NEW_VERSION-blue|" README.md
+            echo "Make an update in the README.md file"
+            echo "Newer version is $NEW_VERSION"
+          fi
+      - name: Check for Changes
+        id: check_changes
+        run: |
+          if [[ -n "$(git diff --exit-code)" ]]; then
+            echo "Changes detected."
+            echo "::set-output name=has_changes::true"
+          else
+            echo "No changes detected."
+            echo "::set-output name=has_changes::false"
+          fi
+      - name: Commit and Push Changes
+        if: steps.check_changes.outputs.has_changes == 'true'
+        run: |
+          git config --global user.name "${{ github.actor }}"
+          git config --global user.email "${{ github.actor }}@users.noreply.github.com"
+          git add .
+          git commit -m 'Update version in README'
+          git push
   
