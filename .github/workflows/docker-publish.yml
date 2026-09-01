@@ -106,7 +106,9 @@ jobs:
           push: ${{ github.event_name != 'pull_request' }}
           tags: |
             ghcr.io/${{ github.repository }}:${{ env.LATEST_RELEASE }}
+            ghcr.io/${{ github.repository }}:latest
             docker.io/${{ github.repository }}:${{ env.LATEST_RELEASE }}
+            docker.io/${{ github.repository }}:latest
           #labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
