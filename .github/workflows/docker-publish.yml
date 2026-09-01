@@ -145,7 +145,7 @@ jobs:
         uses: actions/checkout@v6
       - name: Make update in README file
         run: |
-          LATEST_RELEASE=${{ needs.build.outputs.latest_release }}"
+          LATEST_RELEASE="${{ needs.build.outputs.latest_release }}"
           NEW_VERSION="$(echo $LATEST_RELEASE | cut -c 2-)"
           OLD_VERSION="$(grep "Latest version:" ./README.md | awk -F '/' '{print $NF}' | awk -F '-' '{print $2}')"
           if [[ "$NEW_VERSION" == "$OLD_VERSION" ]]; then
