@@ -17,5 +17,5 @@ docker run -d \
 <br><br/>
 
 
-**Latest version:** ![](https://img.shields.io/badge/V-26.10.21-blue)
+**Latest version:** ![](https://img.shields.io/badge/V-26.10.31-blue)
 
