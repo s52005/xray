@@ -165,6 +165,7 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
+      - run: git pull
       - name: Make update in README file
         run: |
           LATEST_RELEASE="${{ needs.build.outputs.latest_release }}"
