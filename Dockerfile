@@ -12,7 +12,7 @@ RUN wget -c https://github.com/XTLS/Xray-core/releases/download/$XRAY_VERSION/Xr
 FROM alpine:3.24
 COPY --from=builder /xray/* /
 RUN set -ex \
-	&& apk add --no-cache bash tzdata ca-certificates openssl \
+	&& apk add --no-cache bash tzdata ca-certificates openssl iproute2 \
 	&& mkdir -p /var/log/xray /usr/share/xray \
   && mv /xray /usr/bin/ \
   && mv /geoip.dat /geosite.dat /usr/share/xray/
